@@ -38,7 +38,7 @@ def track_object(lower_color, upper_color, video_source=0):
                 cy = int(M["m01"] / M["m00"])
 
                 # Draw a circle at the centroid
-                cv2.circle(frame, (cx, cy), 3, (0, 255, 0), -1)
+                cv2.circle(frame, (cx, cy), 5, (0, 255, 0), -1)
             print(cx, cy);
 
         cv2.imshow("Object Tracking", frame)
