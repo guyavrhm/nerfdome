@@ -42,6 +42,12 @@ def track_blue_object(video_source=0):
         # Display the frame
         cv2.imshow("Blue Object Tracking", frame)
 
+        # Display the HSV frame
+        cv2.imshow("HSV Frame", hsv)
+
+        # Display the mask frame
+        cv2.imshow("Mask Frame", mask)
+
         # Exit the loop when 'q' key is pressed
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
