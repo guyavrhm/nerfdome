@@ -1,60 +1,92 @@
-import cv2
-import numpy as np
+#include <Servo.h>
+
+const int MOTOR1_B_PIN = 13;
+const int MOTOR1_F_PIN = 12;
+const int MOTOR1_SPEED_PIN = 11;
+const int MOTOR2_SPEED_PIN = 10;
+const int SERVO_LOAD_PIN = 9;
+const int MOTOR2_B_PIN = 8;
+const int MOTOR2_F_PIN = 7;
+const int SERVO_PITCH_PIN = 6;
+const int SERVO_YAW_PIN = 5;
+
+const int POT_PIN_PITCH = A0;
+const int POT_PIN_YAW = A1;
+
+const int LOAD_ANGLE = 20;
+
+Servo load;
+Servo pitch;
+Servo yaw;
+
+int lastLoadTime = 0;
+int loadInterval = 150;
+int loadCurrentAngle = 0;
+
+void motorControl(int motor, int direction, int speed = 255) {
+  int motorFPin = (motor == 1) ? MOTOR1_F_PIN : MOTOR2_F_PIN;
+  int motorBPin = (motor == 1) ? MOTOR1_B_PIN : MOTOR2_B_PIN;
+  int motorSPin = (motor == 1) ? MOTOR1_SPEED_PIN : MOTOR2_SPEED_PIN;
+
+  switch (direction) {
+    case 0: // stop
+      digitalWrite(motorFPin, LOW);
+      digitalWrite(motorBPin, LOW);
+      break;
+    case 1: // forward
+      digitalWrite(motorFPin, HIGH);
+      digitalWrite(motorBPin, LOW);
+      analogWrite(motorSPin, speed);
+      break;
+    case -1: // backward
+      digitalWrite(motorFPin, LOW);
+      digitalWrite(motorBPin, HIGH);
+      analogWrite(motorSPin, speed);
+      break;
+    default:
+      // Invalid direction
+      break;
+  }
+}
 
 
-def bgr_to_hsv_limits(bgr_color, tolerance = 10):
-    hsv_color = cv2.cvtColor(np.uint8([[bgr_color]]), cv2.COLOR_BGR2HSV)
-    print(hsv_color)
+void setup() {
+  Serial.begin(9600);
+  pinMode(MOTOR1_B_PIN, OUTPUT);
+  pinMode(MOTOR1_F_PIN, OUTPUT);
+  pinMode(MOTOR2_B_PIN, OUTPUT);
+  pinMode(MOTOR2_F_PIN, OUTPUT);
+  pinMode(MOTOR1_SPEED_PIN, OUTPUT);
+  pinMode(MOTOR2_SPEED_PIN, OUTPUT);
 
-    lower_limit = np.array([max(0, hsv_color[0][0][0] - tolerance), 100, 100], dtype=np.uint8)
-    upper_limit = np.array([min(179, hsv_color[0][0][0] + tolerance), 255, 255], dtype=np.uint8)
+  load.attach(SERVO_LOAD_PIN);
+  pitch.attach(SERVO_PITCH_PIN);
+  yaw.attach(SERVO_YAW_PIN);
 
-    return lower_limit, upper_limit
+  load.write(0);
+  pitch.write(0);
+  yaw.write(0);
+
+  motorControl(1, -1);
+  motorControl(2, 1);
+}
 
 
-def track_object(lower_color, upper_color, video_source=0):
-    cap = cv2.VideoCapture(video_source)
+void loop() {
+  unsigned long currentTime = millis();
 
-    cv2.namedWindow("Object Tracking", cv2.WINDOW_NORMAL)
-    cv2.namedWindow("HSV Frame", cv2.WINDOW_NORMAL)
-    cv2.namedWindow("Mask Frame", cv2.WINDOW_NORMAL)
+  if (currentTime - lastLoadTime >= loadInterval) {
+    loadCurrentAngle = (loadCurrentAngle == 0) ? LOAD_ANGLE : 0;
 
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
+    load.write(loadCurrentAngle);
+    lastLoadTime = currentTime;
+  }
 
-        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+  int servoAnglePitch = map(analogRead(POT_PIN_PITCH), 0, 1023, 0, 180);
+  int servoAngleYaw = map(analogRead(POT_PIN_YAW), 0, 1023, 0, 180);
 
-        mask = cv2.inRange(hsv, lower_color, upper_color)
-        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+  pitch.write(servoAnglePitch);
+  yaw.write(servoAngleYaw);
 
-        if contours:
-            largest_contour = max(contours, key=cv2.contourArea)
-
-            M = cv2.moments(largest_contour)
-            if M["m00"] != 0:
-                cx = int(M["m10"] / M["m00"])
-                cy = int(M["m01"] / M["m00"])
-
-                # Draw a circle at the centroid
-                cv2.circle(frame, (cx, cy), 5, (0, 255, 0), -1)
-            print(cx, cy);
-
-        cv2.imshow("Object Tracking", frame)
-        cv2.imshow("HSV Frame", hsv)
-        cv2.imshow("Mask Frame", mask)
-
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-
-    cap.release()
-    cv2.destroyAllWindows()
-
-bgr_color = [255, 0, 0]
-print(bgr_color)
-lower, upper = bgr_to_hsv_limits(bgr_color, tolerance=30)
-print("Lower Limit:", lower)
-print("Upper Limit:", upper)
-track_object(lower, upper)
-
+  delay(15);
+}
