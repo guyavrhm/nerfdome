@@ -33,14 +33,12 @@ void initialize() {
     servo_set_angle(SERVO_LOAD_PIN, 0);
 }
 
-void updateLoadServo(int *lastLoadTime, int *loadCurrentAngle) {
-    int currentTime = time_us_32() / 1e3;
-    
-    if (currentTime - *lastLoadTime >= LOAD_INTERVAL) {
+void loadServo(int *lastLoadTime, int *loadCurrentAngle, int *currentTime) {
+    if (*currentTime - *lastLoadTime >= LOAD_INTERVAL) {
         *loadCurrentAngle = (*loadCurrentAngle == 0) ? LOAD_ANGLE : 0;
 
         servo_set_angle(SERVO_LOAD_PIN, *loadCurrentAngle);
-        *lastLoadTime = currentTime;
+        *lastLoadTime = *currentTime;
     }
 }
 
@@ -63,7 +61,7 @@ int main() {
     while (true) {
         currentTime = time_us_32() / 1e3;
   
-        updateLoadServo(&lastLoadTime, &loadCurrentAngle);
+        loadServo(&lastLoadTime, &loadCurrentAngle, &currentTime);
 
         yawAngle = readPotentiometer(POT_YAW_PIN);
         pitchAngle = readPotentiometer(POT_PITCH_PIN);
