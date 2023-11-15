@@ -13,7 +13,8 @@
 
 // Load Angles and Timing
 #define LOAD_ANGLE        30
-#define LOAD_INTERVAL     150
+#define LOAD_INTERVAL     1000 // min load time difference
+#define UNLOAD_INTERVAL   100 // unload time
 
 
 void initialize() {
@@ -33,15 +34,6 @@ void initialize() {
     servo_set_angle(SERVO_LOAD_PIN, 0);
 }
 
-void loadServo(int *lastLoadTime, int *loadCurrentAngle, int *currentTime) {
-    if (*currentTime - *lastLoadTime >= LOAD_INTERVAL) {
-        *loadCurrentAngle = (*loadCurrentAngle == 0) ? LOAD_ANGLE : 0;
-
-        servo_set_angle(SERVO_LOAD_PIN, *loadCurrentAngle);
-        *lastLoadTime = *currentTime;
-    }
-}
-
 int readPotentiometer(int pin) {
     adc_select_input(pin - 26);
     return (adc_read()) * 180 / 4095;
@@ -56,12 +48,23 @@ int main() {
     int pitchAngle;
 
     int lastLoadTime = 0;
-    int loadCurrentAngle = 0;
+    bool loaded = false;
+    int tester = 0;
 
     while (true) {
         currentTime = time_us_32() / 1e3;
-  
-        loadServo(&lastLoadTime, &loadCurrentAngle, &currentTime);
+
+        // shoot signal instead of tester
+        if (tester >= 0 && currentTime - lastLoadTime >= LOAD_INTERVAL) {
+          servo_set_angle(SERVO_LOAD_PIN, LOAD_ANGLE);
+          lastLoadTime = currentTime;
+          loaded = true;
+        }
+
+        if (loaded && currentTime - lastLoadTime >= UNLOAD_INTERVAL) {
+          servo_set_angle(SERVO_LOAD_PIN, 0);
+          loaded = false;
+        }
 
         yawAngle = readPotentiometer(POT_YAW_PIN);
         pitchAngle = readPotentiometer(POT_PITCH_PIN);
@@ -69,6 +72,7 @@ int main() {
         servo_set_angle(SERVO_YAW_PIN, yawAngle);
         servo_set_angle(SERVO_PITCH_PIN, pitchAngle);
 
+        tester++;
         sleep_ms(50);
     }
 
