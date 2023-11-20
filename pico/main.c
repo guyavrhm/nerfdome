@@ -16,82 +16,92 @@
 
 // Load Angles and Timing
 #define LOAD_ANGLE        30
-#define LOAD_INTERVAL     1000 // min load time difference
 #define UNLOAD_INTERVAL   100 // unload time
+
+// Commands
+#define HOLD 1
+#define READY 2
+#define SHOOT 3
 
 
 void initialize() {
-    // Setup ADC
-    adc_init();
-    adc_gpio_init(POT_YAW_PIN);
-    adc_gpio_init(POT_PITCH_PIN);
+  // Setup ADC
+  adc_init();
+  adc_gpio_init(POT_YAW_PIN);
+  adc_gpio_init(POT_PITCH_PIN);
 
-    // UART
-    serial_init(uart0, TX_PIN, RX_PIN, 115200);
+  // UART
+  serial_init(uart0, TX_PIN, RX_PIN, 115200);
 
-    // Setup Servos
-    servo_init(SERVO_LOAD_PIN);
-    servo_init(SERVO_YAW_PIN);
-    servo_init(SERVO_PITCH_PIN);
+  // Setup Servos
+  servo_init(SERVO_LOAD_PIN);
+  servo_init(SERVO_YAW_PIN);
+  servo_init(SERVO_PITCH_PIN);
 
-    // Servo Angles
-    servo_set_angle(SERVO_YAW_PIN, 0);
-    servo_set_angle(SERVO_PITCH_PIN, 0);
-    servo_set_angle(SERVO_LOAD_PIN, 0);
+  // Servo Angles
+  servo_set_angle(SERVO_YAW_PIN, 0);
+  servo_set_angle(SERVO_PITCH_PIN, 0);
+  servo_set_angle(SERVO_LOAD_PIN, 0);
 }
 
 int readPotentiometer(int pin) {
-    adc_select_input(pin - 26);
-    return (adc_read()) * 180 / 4095;
+  adc_select_input(pin - 26);
+  return (adc_read()) * 180 / 4095;
 }
 
 int main() {
-    stdio_init_all();
-    initialize();
-    printf("start\n");
+  stdio_init_all();
+  initialize();
+  printf("Activated\n");
 
-    char serial_buffer[SERIAL_MAX_BUFFER_SIZE];
+  char serial_buffer[SERIAL_MAX_BUFFER_SIZE];
 
-    int currentTime;
-    int yawAngle;
-    int pitchAngle;
+  int currentTime;
+  int yawAngle;
+  int pitchAngle;
+  int command;
 
-    int lastLoadTime = 0;
-    bool loaded = false;
-    int tester = 0;
+  int lastLoadTime = 0;
+  bool loaded = false;
 
-    while (true) {
-        currentTime = time_us_32() / 1e3;
+  while (true) {
+    currentTime = time_us_32() / 1e3;
 
-        // scanf("%256s", serial_buffer);
-        // printf("Got: %s\n", serial_buffer);
+    if (loaded && currentTime - lastLoadTime >= UNLOAD_INTERVAL) {
+      servo_set_angle(SERVO_LOAD_PIN, 0);
+      loaded = false;
+    }
 
-        serial_read_string(uart0, serial_buffer);
-        if (serial_buffer[0] != '\0') {
-          printf("Got: %s\n", serial_buffer);
-        }
+    serial_read_string(uart0, serial_buffer);
+    if (serial_buffer[0] != '\0') {
 
-        // shoot signal instead of tester
-        if (tester >= 0 && currentTime - lastLoadTime >= LOAD_INTERVAL) {
+      if (sscanf(serial_buffer, "%d %d", &yawAngle, &pitchAngle) == 2) {
+        printf("Yaw: %d Pitch: %d\n", yawAngle, pitchAngle);
+        servo_set_angle(SERVO_YAW_PIN, yawAngle);
+        servo_set_angle(SERVO_PITCH_PIN, pitchAngle);
+      }
+      else {
+        command = atoi(serial_buffer);
+        if (command == SHOOT && !loaded) {
+          printf("Shoot\n");
           servo_set_angle(SERVO_LOAD_PIN, LOAD_ANGLE);
           lastLoadTime = currentTime;
           loaded = true;
         }
-
-        if (loaded && currentTime - lastLoadTime >= UNLOAD_INTERVAL) {
-          servo_set_angle(SERVO_LOAD_PIN, 0);
-          loaded = false;
+        else if (command == READY) {
+          printf("DC motors ON\n");
         }
-
-        yawAngle = readPotentiometer(POT_YAW_PIN);
-        pitchAngle = readPotentiometer(POT_PITCH_PIN);
-
-        servo_set_angle(SERVO_YAW_PIN, yawAngle);
-        servo_set_angle(SERVO_PITCH_PIN, pitchAngle);
-
-        tester++;
-        sleep_ms(50);
+        else if (command == HOLD) {
+          printf("DC motors OFF\n");
+        }
+        else {
+          printf("Unknown: %s\n", serial_buffer);
+        }
+      }
     }
 
-    return 0;
+    sleep_ms(50);
+  }
+
+  return 0;
 }
