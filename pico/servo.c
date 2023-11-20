@@ -1,9 +1,6 @@
 #include "servo.h"
 
-#define WRAP 10000.f
-#define SERVO_FREQ 50.f
 #define CLKDIV clock_get_hz(clk_sys)/(SERVO_FREQ*WRAP)
-
 
 void servo_init(uint servo_pin) {
     gpio_set_function(servo_pin, GPIO_FUNC_PWM);

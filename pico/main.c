@@ -18,17 +18,17 @@
 
 
 void initialize() {
-    // Set up ADC
+    // Setup ADC
     adc_init();
     adc_gpio_init(POT_YAW_PIN);
     adc_gpio_init(POT_PITCH_PIN);
 
-    // Set up Servos
+    // Setup Servos
     servo_init(SERVO_LOAD_PIN);
     servo_init(SERVO_YAW_PIN);
     servo_init(SERVO_PITCH_PIN);
 
-    // Initialize Servo Angles
+    // Servo Angles
     servo_set_angle(SERVO_YAW_PIN, 0);
     servo_set_angle(SERVO_PITCH_PIN, 0);
     servo_set_angle(SERVO_LOAD_PIN, 0);
