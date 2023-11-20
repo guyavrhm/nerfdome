@@ -1,10 +1,13 @@
 #include <stdio.h>
 #include "servo.h"
+#include "serial.h"
 #include "pico/stdlib.h"
 #include "hardware/adc.h"
 #include "hardware/timer.h"
 
 // Pin Definitions
+#define TX_PIN            0
+#define RX_PIN            1
 #define SERVO_LOAD_PIN    10
 #define SERVO_PITCH_PIN   11
 #define SERVO_YAW_PIN     12
@@ -22,6 +25,9 @@ void initialize() {
     adc_init();
     adc_gpio_init(POT_YAW_PIN);
     adc_gpio_init(POT_PITCH_PIN);
+
+    // UART
+    serial_init(uart0, TX_PIN, RX_PIN, 115200);
 
     // Setup Servos
     servo_init(SERVO_LOAD_PIN);
@@ -42,6 +48,9 @@ int readPotentiometer(int pin) {
 int main() {
     stdio_init_all();
     initialize();
+    printf("start\n");
+
+    char serial_buffer[SERIAL_MAX_BUFFER_SIZE];
 
     int currentTime;
     int yawAngle;
@@ -53,6 +62,14 @@ int main() {
 
     while (true) {
         currentTime = time_us_32() / 1e3;
+
+        // scanf("%256s", serial_buffer);
+        // printf("Got: %s\n", serial_buffer);
+
+        serial_read_string(uart0, serial_buffer);
+        if (serial_buffer[0] != '\0') {
+          printf("Got: %s\n", serial_buffer);
+        }
 
         // shoot signal instead of tester
         if (tester >= 0 && currentTime - lastLoadTime >= LOAD_INTERVAL) {

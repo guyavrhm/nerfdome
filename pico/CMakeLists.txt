@@ -16,6 +16,7 @@ pico_sdk_init()
 add_executable(${PROJECT_NAME} 
     main.c
     servo.c
+    serial.c
 )
 
 # Create map/bin/hex/uf2 files
@@ -27,6 +28,7 @@ target_link_libraries(${PROJECT_NAME}
     hardware_adc
     hardware_pwm
     hardware_timer
+    hardware_uart
 )
 
 # Enable usb output, disable uart output

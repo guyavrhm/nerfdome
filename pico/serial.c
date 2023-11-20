@@ -6,9 +6,9 @@ void serial_init(uart_inst_t *uart, uint tx, uint rx, uint baud_rate) {
     gpio_set_function(tx, GPIO_FUNC_UART);
     gpio_set_function(rx, GPIO_FUNC_UART);
 
-    uart_set_hw_flow(uart, false, false);
-    uart_set_format(uart, 8, 1, UART_PARITY_NONE);
-    uart_set_fifo_enabled(uart, false);
+    // uart_set_hw_flow(uart, false, false);
+    // uart_set_format(uart, 8, 1, UART_PARITY_NONE);
+    // uart_set_fifo_enabled(uart, false);
 }
 
 char serial_read_char(uart_inst_t *uart) {
