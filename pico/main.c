@@ -11,26 +11,20 @@
 #define SERVO_LOAD_PIN    10
 #define SERVO_PITCH_PIN   11
 #define SERVO_YAW_PIN     12
-#define POT_YAW_PIN       26
-#define POT_PITCH_PIN     27
 
 // Load Angles and Timing
 #define LOAD_ANGLE        30
 #define UNLOAD_INTERVAL   100 // unload time
 
 // Commands
-#define HOLD 1
-#define READY 2
-#define SHOOT 3
+#define POSITION 1
+#define SHOOT 2
+#define READY 3
+#define HOLD 4
 
 
 void initialize() {
-  // Setup ADC
-  adc_init();
-  adc_gpio_init(POT_YAW_PIN);
-  adc_gpio_init(POT_PITCH_PIN);
-
-  // UART
+  // Setup Serial
   serial_init(uart0, TX_PIN, RX_PIN, 115200);
 
   // Setup Servos
@@ -44,25 +38,19 @@ void initialize() {
   servo_set_angle(SERVO_LOAD_PIN, 0);
 }
 
-int readPotentiometer(int pin) {
-  adc_select_input(pin - 26);
-  return (adc_read()) * 180 / 4095;
-}
-
 int main() {
   stdio_init_all();
   initialize();
   printf("Activated\n");
 
-  char serial_buffer[SERIAL_MAX_BUFFER_SIZE];
-
   int currentTime;
-  int yawAngle;
-  int pitchAngle;
-  int command;
-
   int lastLoadTime = 0;
   bool loaded = false;
+
+  char serial_buffer[SERIAL_MAX_BUFFER_SIZE];
+  uint8_t command;
+  uint8_t commandParam1;
+  uint8_t commandParam2;
 
   while (true) {
     currentTime = time_us_32() / 1e3;
@@ -74,32 +62,39 @@ int main() {
 
     serial_read_string(uart0, serial_buffer);
     if (serial_buffer[0] != '\0') {
+      sscanf(serial_buffer, "%d %d %d", &command, &commandParam1, &commandParam2);
 
-      if (sscanf(serial_buffer, "%d %d", &yawAngle, &pitchAngle) == 2) {
-        printf("Yaw: %d Pitch: %d\n", yawAngle, pitchAngle);
-        servo_set_angle(SERVO_YAW_PIN, yawAngle);
-        servo_set_angle(SERVO_PITCH_PIN, pitchAngle);
+      if (command == POSITION) {
+        // 1     40   120
+        // type  yaw  pitch
+        printf("Yaw: %d Pitch: %d\n", commandParam1, commandParam2);
+        servo_set_angle(SERVO_YAW_PIN, commandParam1);
+        servo_set_angle(SERVO_PITCH_PIN, commandParam2);
+      }
+      else if (command == SHOOT && !loaded) {
+        // 2     5
+        // type  times
+        printf("Shoot %d\n", commandParam1);
+        servo_set_angle(SERVO_LOAD_PIN, LOAD_ANGLE);
+        lastLoadTime = currentTime;
+        loaded = true;
+      }
+      else if (command == READY) {
+        printf("DC motors ON\n");
+      }
+      else if (command == HOLD) {
+        printf("DC motors OFF\n");
       }
       else {
-        command = atoi(serial_buffer);
-        if (command == SHOOT && !loaded) {
-          printf("Shoot\n");
-          servo_set_angle(SERVO_LOAD_PIN, LOAD_ANGLE);
-          lastLoadTime = currentTime;
-          loaded = true;
-        }
-        else if (command == READY) {
-          printf("DC motors ON\n");
-        }
-        else if (command == HOLD) {
-          printf("DC motors OFF\n");
-        }
-        else {
+        if (strlen(serial_buffer) != 0)
           printf("Unknown: %s\n", serial_buffer);
-        }
+        else
+          printf("Unknown: %d\n", command);
       }
-    }
 
+      commandParam1 = 0;
+      commandParam2 = 0;
+    }
     sleep_ms(50);
   }
 
