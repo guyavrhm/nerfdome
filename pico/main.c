@@ -84,7 +84,7 @@ int main() {
         servo_set_angle(SERVO_YAW_PIN, command_param1);
         servo_set_angle(SERVO_PITCH_PIN, command_param2);
       }
-      else if (command == SHOOT && !is_loaded) {
+      else if (command == SHOOT) {
         // 2     5
         // type  times
         printf("Shoot %hhu\n", command_param1);
