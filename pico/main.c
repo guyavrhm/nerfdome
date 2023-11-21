@@ -10,6 +10,8 @@
 #define SERVO_LOAD_PIN    10
 #define SERVO_PITCH_PIN   11
 #define SERVO_YAW_PIN     12
+#define MOTOR1_PIN        18
+#define MOTOR2_PIN        19
 
 // Load Angles and Timing
 #define LOAD_ANGLE        30
@@ -27,6 +29,12 @@ enum CommandType {
 void initialize() {
   // Setup Serial
   serial_init(uart0, TX_PIN, RX_PIN, 115200);
+
+  // Setup Motors
+  gpio_init(MOTOR1_PIN);
+  gpio_init(MOTOR2_PIN);
+  gpio_set_dir(MOTOR1_PIN, GPIO_OUT);
+  gpio_set_dir(MOTOR2_PIN, GPIO_OUT);
 
   // Setup Servos
   servo_init(SERVO_LOAD_PIN);
@@ -92,9 +100,13 @@ int main() {
       }
       else if (command == READY) {
         printf("DC motors ON\n");
+        gpio_put(MOTOR1_PIN, 1);
+        gpio_put(MOTOR2_PIN, 1);
       }
       else if (command == HOLD) {
         printf("DC motors OFF\n");
+        gpio_put(MOTOR1_PIN, 0);
+        gpio_put(MOTOR2_PIN, 0);
       }
       else {
         if (strlen(serial_buffer) != 0)
