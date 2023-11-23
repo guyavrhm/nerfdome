@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include "servo.h"
 #include "serial.h"
 #include "pico/stdlib.h"
