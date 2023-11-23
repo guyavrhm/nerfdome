@@ -1,6 +1,6 @@
 import serial
 
-serial_port = serial.Serial('COM5', baudrate=9600, timeout=1)
+serial_port = serial.Serial('COM3', baudrate=115200, timeout=1)
 
 try:
     while 1:
