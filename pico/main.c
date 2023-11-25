@@ -28,8 +28,7 @@ enum CommandType {
 };
 
 void initialize() {
-  // Setup Serial
-  serial_init(uart0, TX_PIN, RX_PIN, 115200);
+  stdio_init_all();
 
   // Setup Motors
   gpio_init(MOTOR1_PIN);
@@ -62,7 +61,6 @@ void handle_load(bool *is_loaded, uint8_t *loads_left, int *current_time, int *l
 }
 
 int main() {
-  stdio_init_all();
   initialize();
   printf("Activated\n");
 
@@ -82,10 +80,10 @@ int main() {
     // Handle ammunition load
     handle_load(&is_loaded, &loads_left, &current_time, &last_load_time);
 
-    serial_read_string(uart0, serial_buffer);
-    if (serial_buffer[0] != '\0') {
+    serial_read_string(serial_buffer);
+    if (serial_buffer[0] != NULL_CHAR) {
       sscanf(serial_buffer, "%hhu %hhu %hhu", &command, &command_param1, &command_param2);
-
+      
       if (command == POSITION) {
         // 1     40   120
         // type  yaw  pitch

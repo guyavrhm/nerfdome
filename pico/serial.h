@@ -1,13 +1,14 @@
 #ifndef SERIAL_H
 #define SERIAL_H
 
+#include <stdio.h>
 #include "pico/stdlib.h"
-#include "hardware/uart.h"
 
 #define SERIAL_MAX_BUFFER_SIZE  256
+#define NULL_CHAR               0
+#define NEWLINE_CHAR            10
 
-void serial_init(uart_inst_t *uart, uint tx, uint rx, uint baud_rate);
-char serial_read_char(uart_inst_t *uart);
-void serial_read_string(uart_inst_t *uart, char *buffer);
+char serial_read_char();
+void serial_read_string(char *buffer);
 
 #endif
