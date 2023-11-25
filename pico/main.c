@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "servo.h"
 #include "serial.h"
@@ -26,6 +27,12 @@ enum CommandType {
   READY = 3,
   HOLD = 4
 };
+
+typedef struct {
+  uint8_t command;
+  uint8_t command_param1;
+  uint8_t command_param2;
+} ParsedInput;
 
 void initialize() {
   stdio_init_all();
@@ -60,6 +67,27 @@ void handle_load(bool *is_loaded, uint8_t *loads_left, int *current_time, int *l
   }
 }
 
+ParsedInput parseSerialBuffer(char* serial_buffer) {
+  ParsedInput result = {0};  // Initialize the struct with default values
+
+  char* token = strtok(serial_buffer, " ");
+
+  if (token != NULL) {
+    result.command = atoi(token);
+    token = strtok(NULL, " ");
+
+    if (token != NULL) {
+      result.command_param1 = atoi(token);
+      token = strtok(NULL, " ");
+
+      if (token != NULL) {
+        result.command_param2 = atoi(token);
+      }
+    }
+  }
+  return result;
+}
+
 int main() {
   initialize();
   printf("Activated\n");
@@ -70,9 +98,7 @@ int main() {
   bool is_loaded = false;
 
   char serial_buffer[SERIAL_MAX_BUFFER_SIZE];
-  uint8_t command = 0;
-  uint8_t command_param1 = 0;
-  uint8_t command_param2 = 0;
+  ParsedInput input_data;
 
   while (true) {
     current_time = time_us_32() / 1e3;
@@ -82,41 +108,38 @@ int main() {
 
     serial_read_string(serial_buffer);
     if (serial_buffer[0] != NULL_CHAR) {
-      sscanf(serial_buffer, "%hhu %hhu %hhu", &command, &command_param1, &command_param2);
-      
-      if (command == POSITION) {
+      //sscanf(serial_buffer, "%hhu %hhu %hhu", &command, &command_param1, &command_param2);
+      input_data = parseSerialBuffer(serial_buffer);
+
+      if (input_data.command == POSITION) {
         // 1     40   120
         // type  yaw  pitch
-        printf("Yaw: %hhu Pitch: %hhu\n", command_param1, command_param2);
-        servo_set_angle(SERVO_YAW_PIN, command_param1);
-        servo_set_angle(SERVO_PITCH_PIN, command_param2);
+        printf("Yaw: %hhu Pitch: %hhu\n", input_data.command_param1, input_data.command_param2);
+        servo_set_angle(SERVO_YAW_PIN, input_data.command_param1);
+        servo_set_angle(SERVO_PITCH_PIN, input_data.command_param2);
       }
-      else if (command == SHOOT) {
+      else if (input_data.command == SHOOT) {
         // 2     5
         // type  times
-        printf("Shoot %hhu\n", command_param1);
-        loads_left = command_param1;
+        printf("Shoot %hhu\n", input_data.command_param1);
+        loads_left = input_data.command_param1;
       }
-      else if (command == READY) {
+      else if (input_data.command == READY) {
         printf("DC motors ON\n");
         gpio_put(MOTOR1_PIN, 1);
         gpio_put(MOTOR2_PIN, 1);
       }
-      else if (command == HOLD) {
+      else if (input_data.command == HOLD) {
         printf("DC motors OFF\n");
         gpio_put(MOTOR1_PIN, 0);
         gpio_put(MOTOR2_PIN, 0);
       }
       else {
         if (strlen(serial_buffer) != 0)
-          printf("Unknown: %s\n", serial_buffer);
+          printf("Unknown Command: %s\n", serial_buffer);
         else
-          printf("Unknown: %hhu\n", command);
+          printf("Unknown Command: %hhu\n", input_data.command);
       }
-
-      command = 0;
-      command_param1 = 0;
-      command_param2 = 0;
     }
     sleep_ms(50);
   }
