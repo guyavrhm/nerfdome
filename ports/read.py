@@ -4,7 +4,7 @@ serial_port = serial.Serial('COM3', baudrate=115200, timeout=1)
 
 try:
     while 1:
-        data = serial_port.readline().decode('utf-8').strip()
+        data = serial_port.readline().decode('utf-8', errors="ignore").strip()
         if data:
             print(f"Received data: {data}")
 
