@@ -18,6 +18,7 @@ add_executable(${PROJECT_NAME}
     main.c
     servo.c
     serial.c
+    spp_streamer.c
 )
 
 # Create map/bin/hex/uf2 files
@@ -29,6 +30,14 @@ target_link_libraries(${PROJECT_NAME}
     hardware_pwm
     hardware_timer
     hardware_uart
+    pico_btstack_ble
+    pico_btstack_classic
+    pico_btstack_cyw43
+    pico_cyw43_arch_none
+)
+
+target_include_directories(${PROJECT_NAME} PRIVATE
+    ${CMAKE_CURRENT_LIST_DIR} # For btstack config
 )
 
 # Enable usb output, disable uart output
