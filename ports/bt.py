@@ -10,6 +10,9 @@ bt_mac = "D8:3A:DD:41:7A:F9" # Replace with yours.
 port = 1
 sock=bluetooth.BluetoothSocket(bluetooth.RFCOMM)
 sock.connect((bt_mac, port))
-
+input("Done!")
 while 1:
-    sock.send(input("Send: "))
+    x = input("Send: ")
+    if len(x) != 0:
+        sock.send(x)
+        # print(sock.recv(1024))

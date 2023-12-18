@@ -3,6 +3,7 @@
 #include <string.h>
 #include "servo.h"
 #include "serial.h"
+#include "bluetooth_spp.h"
 #include "pico/cyw43_arch.h"
 #include "pico/stdlib.h"
 #include "hardware/timer.h"
@@ -36,7 +37,6 @@ typedef struct {
   uint8_t command_param2;
 } ParsedInput;
 
-int btstack_main(int argc, const char * argv[]);
 
 void initialize() {
   stdio_init_all();
@@ -99,7 +99,7 @@ ParsedInput parseCommands(uint8_t* data) {
   return result;
 }
 
-void btstack_receive(uint8_t *data, uint16_t size) {
+void bt_on_receive(uint8_t *data, uint16_t size) {
     ParsedInput input_data = parseCommands(data);
 
     if (input_data.command == POSITION) {

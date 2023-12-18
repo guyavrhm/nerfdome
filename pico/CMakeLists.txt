@@ -18,7 +18,7 @@ add_executable(${PROJECT_NAME}
     main.c
     servo.c
     serial.c
-    spp_streamer.c
+    bluetooth_spp.c
 )
 
 # Create map/bin/hex/uf2 files
