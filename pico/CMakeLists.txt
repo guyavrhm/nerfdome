@@ -15,10 +15,10 @@ pico_sdk_init()
 
 # Tell CMake where to find the executable source file
 add_executable(${PROJECT_NAME} 
-    main.c
-    servo.c
-    serial.c
-    bluetooth_spp.c
+    src/main.c
+    src/modules/servo.c
+    src/modules/serial.c
+    src/btstack/spp.c
 )
 
 # Create map/bin/hex/uf2 files
@@ -37,7 +37,8 @@ target_link_libraries(${PROJECT_NAME}
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE
-    ${CMAKE_CURRENT_LIST_DIR} # For btstack config
+    include/btstack
+    include/modules
 )
 
 # Enable usb output, disable uart output

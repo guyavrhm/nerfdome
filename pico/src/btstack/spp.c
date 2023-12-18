@@ -35,7 +35,7 @@
  *
  */
 
-#define BTSTACK_FILE__ "bluetooth_spp.c"
+#define BTSTACK_FILE__ "spp.c"
 
 // *****************************************************************************
 /* EXAMPLE_START(spp_counter): SPP Server - RFCOMM
@@ -56,7 +56,7 @@
 #include <string.h>
  
 #include "btstack.h"
-#include "bluetooth_spp.h"
+#include "spp.h"
 
 #define RFCOMM_SERVER_CHANNEL 1
 

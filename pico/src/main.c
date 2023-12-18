@@ -3,7 +3,7 @@
 #include <string.h>
 #include "servo.h"
 #include "serial.h"
-#include "bluetooth_spp.h"
+#include "spp.h"
 #include "pico/cyw43_arch.h"
 #include "pico/stdlib.h"
 #include "hardware/timer.h"
@@ -119,11 +119,13 @@ void bt_on_receive(uint8_t *data, uint16_t size) {
       printf("DC motors ON\n");
       gpio_put(MOTOR1_PIN, 1);
       gpio_put(MOTOR2_PIN, 1);
+      cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);   
     }
     else if (input_data.command == HOLD) {
       printf("DC motors OFF\n");
       gpio_put(MOTOR1_PIN, 0);
       gpio_put(MOTOR2_PIN, 0);
+      cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
     }
     else {
       if (strlen(data) != 0)

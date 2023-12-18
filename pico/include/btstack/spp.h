@@ -1,5 +1,5 @@
-#ifndef BLUETOOTH_SPP_H
-#define BLUETOOTH_SPP_H
+#ifndef SPP_H
+#define SPP_H
 
 #include <inttypes.h>
 
@@ -8,4 +8,4 @@ void bt_send(uint8_t *data);
 
 int btstack_main(int argc, const char * argv[]);
 
-#endif // BLUETOOTH_SPP_H
+#endif // SPP_H
