@@ -16,6 +16,7 @@ pico_sdk_init()
 # Tell CMake where to find the executable source file
 add_executable(${PROJECT_NAME} 
     src/main.c
+    src/protocol.c
     src/modules/servo.c
     src/modules/serial.c
     src/btstack/spp.c
@@ -37,6 +38,7 @@ target_link_libraries(${PROJECT_NAME}
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE
+    include/
     include/btstack
     include/modules
 )

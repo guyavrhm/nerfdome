@@ -4,6 +4,7 @@
 #include "servo.h"
 #include "serial.h"
 #include "spp.h"
+#include "protocol.h"
 #include "pico/cyw43_arch.h"
 #include "pico/stdlib.h"
 #include "hardware/timer.h"
@@ -23,21 +24,40 @@
 #define UNLOAD_INTERVAL   100 // time until unload (from load)
 static uint8_t loads_left = 0;
 
-// Commands
-enum CommandType {
-  POSITION = 1,
-  SHOOT = 2,
-  READY = 3,
-  HOLD = 4
-};
-
-typedef struct {
-  uint8_t type;
-  uint8_t param1;
-  uint8_t param2;
-} protocol_command_data;
-
 static protocol_command_data command;
+
+void bt_on_receive(uint8_t *data, uint16_t size) {
+    if (extract_protocol_data(data, size, &command)) {
+      if (command.type == POSITION) {
+      // 1     40   120
+      // type  yaw  pitch
+      printf("Yaw: %hhu Pitch: %hhu\n", command.param1, command.param2);
+      servo_set_angle(SERVO_YAW_PIN, command.param1);
+      servo_set_angle(SERVO_PITCH_PIN, command.param2);
+      }
+      else if (command.type == SHOOT) {
+        // 2     5
+        // type  times
+        printf("Shoot %hhu\n", command.param1);
+        loads_left = command.param1;
+      }
+      else if (command.type == READY) {
+        printf("DC motors ON\n");
+        gpio_put(MOTOR1_PIN, 1);
+        gpio_put(MOTOR2_PIN, 1);
+        cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);   
+      }
+      else if (command.type == HOLD) {
+        printf("DC motors OFF\n");
+        gpio_put(MOTOR1_PIN, 0);
+        gpio_put(MOTOR2_PIN, 0);
+        cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
+      }
+      else {
+        printf("Unknown Command: %hhu\n", command.type);
+      }
+    }
+}
 
 void initialize() {
   stdio_init_all();
@@ -79,49 +99,6 @@ void handle_load(bool *is_loaded, int *current_time, int *last_load_time) {
   }
 }
 
-bool extract_protocol_data(const uint8_t* data, uint16_t data_size, protocol_command_data* result) {
-    if (data_size != sizeof(protocol_command_data)) {
-        printf("Error: Invalid data length\n");
-        return false;
-    }
-
-    memcpy(result, data, sizeof(protocol_command_data));
-    return true;
-}
-
-void bt_on_receive(uint8_t *data, uint16_t size) {
-    if (extract_protocol_data(data, size, &command)) {
-      if (command.type == POSITION) {
-      // 1     40   120
-      // type  yaw  pitch
-      printf("Yaw: %hhu Pitch: %hhu\n", command.param1, command.param2);
-      servo_set_angle(SERVO_YAW_PIN, command.param1);
-      servo_set_angle(SERVO_PITCH_PIN, command.param2);
-      }
-      else if (command.type == SHOOT) {
-        // 2     5
-        // type  times
-        printf("Shoot %hhu\n", command.param1);
-        loads_left = command.param1;
-      }
-      else if (command.type == READY) {
-        printf("DC motors ON\n");
-        gpio_put(MOTOR1_PIN, 1);
-        gpio_put(MOTOR2_PIN, 1);
-        cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);   
-      }
-      else if (command.type == HOLD) {
-        printf("DC motors OFF\n");
-        gpio_put(MOTOR1_PIN, 0);
-        gpio_put(MOTOR2_PIN, 0);
-        cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
-      }
-      else {
-        printf("Unknown Command: %hhu\n", command.type);
-      }
-    }
-}
-
 int main() {
   initialize();
   printf("Activated\n");
@@ -133,9 +110,9 @@ int main() {
   while (true) {
     current_time = time_us_32() / 1e3;
 
-    // Handle ammunition load
     handle_load(&is_loaded, &current_time, &last_load_time);
     sleep_ms(50);
   }
+  
   return 0;
 }
