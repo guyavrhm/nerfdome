@@ -32,11 +32,12 @@ enum CommandType {
 };
 
 typedef struct {
-  uint8_t command;
-  uint8_t command_param1;
-  uint8_t command_param2;
-} ParsedInput;
+  uint8_t type;
+  uint8_t param1;
+  uint8_t param2;
+} protocol_command_data;
 
+static protocol_command_data command;
 
 void initialize() {
   stdio_init_all();
@@ -78,60 +79,46 @@ void handle_load(bool *is_loaded, int *current_time, int *last_load_time) {
   }
 }
 
-ParsedInput parseCommands(uint8_t* data) {
-  ParsedInput result = {0};  // Initialize the struct with default values
-
-  char* token = strtok(data, " ");
-
-  if (token != NULL) {
-    result.command = atoi(token);
-    token = strtok(NULL, " ");
-
-    if (token != NULL) {
-      result.command_param1 = atoi(token);
-      token = strtok(NULL, " ");
-
-      if (token != NULL) {
-        result.command_param2 = atoi(token);
-      }
+bool extract_protocol_data(const uint8_t* data, uint16_t data_size, protocol_command_data* result) {
+    if (data_size != sizeof(protocol_command_data)) {
+        printf("Error: Invalid data length\n");
+        return false;
     }
-  }
-  return result;
+
+    memcpy(result, data, sizeof(protocol_command_data));
+    return true;
 }
 
 void bt_on_receive(uint8_t *data, uint16_t size) {
-    ParsedInput input_data = parseCommands(data);
-
-    if (input_data.command == POSITION) {
+    if (extract_protocol_data(data, size, &command)) {
+      if (command.type == POSITION) {
       // 1     40   120
       // type  yaw  pitch
-      printf("Yaw: %hhu Pitch: %hhu\n", input_data.command_param1, input_data.command_param2);
-      servo_set_angle(SERVO_YAW_PIN, input_data.command_param1);
-      servo_set_angle(SERVO_PITCH_PIN, input_data.command_param2);
-    }
-    else if (input_data.command == SHOOT) {
-      // 2     5
-      // type  times
-      printf("Shoot %hhu\n", input_data.command_param1);
-      loads_left = input_data.command_param1;
-    }
-    else if (input_data.command == READY) {
-      printf("DC motors ON\n");
-      gpio_put(MOTOR1_PIN, 1);
-      gpio_put(MOTOR2_PIN, 1);
-      cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);   
-    }
-    else if (input_data.command == HOLD) {
-      printf("DC motors OFF\n");
-      gpio_put(MOTOR1_PIN, 0);
-      gpio_put(MOTOR2_PIN, 0);
-      cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
-    }
-    else {
-      if (strlen(data) != 0)
-        printf("Unknown Command: %s\n", data);
-      else
-        printf("Unknown Command: %hhu\n", input_data.command);
+      printf("Yaw: %hhu Pitch: %hhu\n", command.param1, command.param2);
+      servo_set_angle(SERVO_YAW_PIN, command.param1);
+      servo_set_angle(SERVO_PITCH_PIN, command.param2);
+      }
+      else if (command.type == SHOOT) {
+        // 2     5
+        // type  times
+        printf("Shoot %hhu\n", command.param1);
+        loads_left = command.param1;
+      }
+      else if (command.type == READY) {
+        printf("DC motors ON\n");
+        gpio_put(MOTOR1_PIN, 1);
+        gpio_put(MOTOR2_PIN, 1);
+        cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);   
+      }
+      else if (command.type == HOLD) {
+        printf("DC motors OFF\n");
+        gpio_put(MOTOR1_PIN, 0);
+        gpio_put(MOTOR2_PIN, 0);
+        cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
+      }
+      else {
+        printf("Unknown Command: %hhu\n", command.type);
+      }
     }
 }
 
