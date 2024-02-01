@@ -9,7 +9,6 @@ port = 1
 sock=bluetooth.BluetoothSocket(bluetooth.RFCOMM)
 sock.connect((bt_mac, port))
 
-# Load the pre-trained face detector from OpenCV
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 cap = cv2.VideoCapture(0)
 
@@ -21,7 +20,6 @@ while True:
     for (x, y, w, h) in faces:
         cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
 
-        # Map coordinates to the range of 0 to 180
         mapped_x = int((x + w/2) * 180 / frame.shape[1])
         mapped_y = int((y + h/2) * 180 / frame.shape[0])
         sock.send(struct.pack('BBB', 1, mapped_y, 180 - mapped_x))
